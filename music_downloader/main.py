@@ -11,16 +11,25 @@ from pathlib import Path
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QIcon
 
+<<<<<<< HEAD
 from music_downloader.ui.app_ui import AppWindow
 from music_downloader.ui.themes import ThemeType, apply_theme
+=======
+from ui.app_ui import AppWindow
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
 
 DEFAULT_CONFIG = {
     "download_dir": str(Path.home() / "Downloads" / "MusicDownloader"),
     "default_format": "mp3",  # mp3 | mp4
     "audio_bitrate_kbps": 320,  # 128 | 192 | 320
+<<<<<<< HEAD
     "concurrent_downloads": 16,  # Optimized for playlists (best balance)
     "theme": "dark",  # dark | light | amoled
+=======
+    "concurrent_downloads": 6,  # Increased default for faster playlists
+    "theme": "dark",  # dark | light (light not implemented yet)
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 }
 
 
@@ -63,6 +72,7 @@ def main() -> int:
     if icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))
 
+<<<<<<< HEAD
     # Apply theme
     theme_name = config.get("theme", "dark").lower()
     theme_map = {"dark": ThemeType.DARK, "light": ThemeType.LIGHT, "amoled": ThemeType.AMOLED}
@@ -71,6 +81,10 @@ def main() -> int:
     
     # Legacy stylesheet (will be replaced by theme system)
     app.setStyleSheet(app.styleSheet() + """
+=======
+    # Ultra-modern elegant dark theme
+    app.setStyleSheet("""
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         /* Global Styles */
         QMainWindow, QWidget {
             background: qlineargradient(x1:0, y1:0, x2:0, y2:1,

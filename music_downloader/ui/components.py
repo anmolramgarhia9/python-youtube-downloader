@@ -29,12 +29,17 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
 )
 
+<<<<<<< HEAD
 from music_downloader.core.search import search_youtube
 from music_downloader.core.downloader import DownloadManager, DownloadJob
 from music_downloader.ui.thumbnail_cache import get_thumbnail_cache
 from music_downloader.ui.circular_progress import CircularProgress
 from music_downloader.ui.components_enhanced import DragDropLineEdit
 from music_downloader.ui.animations import AnimationHelper
+=======
+from core.search import search_youtube
+from core.downloader import DownloadManager, DownloadJob
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
 
 # ---------------- Search Tab ----------------
@@ -45,7 +50,10 @@ class SearchTab(QWidget):
     def __init__(self):
         super().__init__()
         self._results: List[dict] = []
+<<<<<<< HEAD
         self._is_searching = False
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 20, 20, 20)
@@ -57,7 +65,11 @@ class SearchTab(QWidget):
         search_layout = QHBoxLayout(search_container)
         search_layout.setSpacing(10)
         
+<<<<<<< HEAD
         self.query = DragDropLineEdit()
+=======
+        self.query = QLineEdit()
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         self.query.setPlaceholderText("Search for music, paste YouTube URL, or playlist link...")
         self.query.setMinimumHeight(52)
         self.query.returnPressed.connect(self._do_search)
@@ -223,12 +235,15 @@ class SearchTab(QWidget):
         if not q:
             return
         
+<<<<<<< HEAD
         # Set loading state
         self._is_searching = True
         self.search_btn.setEnabled(False)
         self.search_btn.setText("⏳ Searching...")
         self.query.setEnabled(False)
         
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         # Smart URL detection - check if it's a direct URL
         if self._is_url(q):
             if self._is_playlist_url(q):
@@ -238,6 +253,10 @@ class SearchTab(QWidget):
             return
         
         # Regular search
+<<<<<<< HEAD
+=======
+        self.search_btn.setEnabled(False)
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         # Clear grid layout
         for i in reversed(range(self.grid_layout.count())): 
             widget = self.grid_layout.itemAt(i).widget()
@@ -301,11 +320,15 @@ class SearchTab(QWidget):
         import concurrent.futures
         
         self.search_btn.setEnabled(False)
+<<<<<<< HEAD
         # Clear grid layout for search tab
         for i in reversed(range(self.grid_layout.count())): 
             widget = self.grid_layout.itemAt(i).widget()
             if widget:
                 widget.deleteLater()
+=======
+        self.list.clear()
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         
         def worker():
             try:
@@ -378,12 +401,16 @@ class SearchTab(QWidget):
 
     def _on_results(self, results: List[dict]):
         self._results = results
+<<<<<<< HEAD
         
         # Reset loading state
         self._is_searching = False
         self.search_btn.setEnabled(True)
         self.search_btn.setText("Search")
         self.query.setEnabled(True)
+=======
+        self.search_btn.setEnabled(True)
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         
         # Clear existing grid items
         for i in reversed(range(self.grid_layout.count())): 
@@ -391,6 +418,7 @@ class SearchTab(QWidget):
             if widget:
                 widget.deleteLater()
         
+<<<<<<< HEAD
         if not results:
             # Show empty state for no results
             empty_widget = QWidget()
@@ -425,16 +453,22 @@ class SearchTab(QWidget):
         
         # Add cards to grid (4 columns) and collect them for animation
         cards = []
+=======
+        # Add cards to grid (4 columns)
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         for idx, item in enumerate(results):
             row = idx // 4
             col = idx % 4
             card = self._create_result_card(item)
             self.grid_layout.addWidget(card, row, col)
+<<<<<<< HEAD
             cards.append(card)
         
         # Animate cards appearing with staggered fade-in
         if cards:
             AnimationHelper.stagger_fade_in(cards, delay=30, duration=250)
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
     
     def _create_result_card(self, item: dict) -> QWidget:
         """Create a beautiful card for a search result."""
@@ -469,6 +503,7 @@ class SearchTab(QWidget):
             border-top-right-radius: 16px;
         """)
         
+<<<<<<< HEAD
         # Load thumbnail asynchronously with caching
         thumb_url = item.get("thumbnail")
         if thumb_url:
@@ -482,6 +517,19 @@ class SearchTab(QWidget):
                 thumb_label.setStyleSheet(thumb_label.styleSheet() + "font-size: 48px; color: #535353;")
             
             cache.load_async(thumb_url, 240, 180, on_loaded, on_failed)
+=======
+        # Load thumbnail asynchronously
+        thumb_url = item.get("thumbnail")
+        if thumb_url:
+            def load_thumb():
+                pix = _load_pixmap(thumb_url, 240, 180)
+                if pix:
+                    thumb_label.setPixmap(pix)
+                else:
+                    thumb_label.setText("🎵")
+                    thumb_label.setStyleSheet(thumb_label.styleSheet() + "font-size: 48px; color: #535353;")
+            threading.Thread(target=load_thumb, daemon=True).start()
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         else:
             thumb_label.setText("🎵")
             thumb_label.setStyleSheet(thumb_label.styleSheet() + "font-size: 48px; color: #535353;")
@@ -650,6 +698,7 @@ class DownloadRow(QWidget):
             }
         """)
 
+<<<<<<< HEAD
         # Main horizontal layout with circular progress on left
         main_h = QHBoxLayout(self)
         main_h.setContentsMargins(20, 15, 20, 15)
@@ -663,6 +712,11 @@ class DownloadRow(QWidget):
         v = QVBoxLayout()
         v.setSpacing(8)
         main_h.addLayout(v)
+=======
+        v = QVBoxLayout(self)
+        v.setContentsMargins(20, 15, 20, 15)
+        v.setSpacing(10)
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         
         # Title
         self.title = QLabel(job.title)
@@ -801,7 +855,10 @@ class DownloadRow(QWidget):
 
     def _on_progress(self, pct: int, speed: str, eta: str, size: str):
         self.progress.setValue(max(0, min(100, pct)))
+<<<<<<< HEAD
         self.circular_progress.set_progress(pct)  # Update circular progress
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         self.info.setText(f"📈 {pct}% • {speed} • {size} • ETA {eta}")
         self.info.setStyleSheet("""
             color: #1db954;
@@ -812,7 +869,10 @@ class DownloadRow(QWidget):
     def _on_done(self, path: str):
         self.info.setText("✅ Completed Successfully!")
         self.progress.setValue(100)
+<<<<<<< HEAD
         self.circular_progress.set_progress(100)  # Complete
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         self.info.setStyleSheet("""
             color: #4caf50;
             font-size: 12px;
@@ -917,6 +977,7 @@ class SettingsTab(QWidget):
         perf_layout = QVBoxLayout(perf_group)
         perf_layout.setSpacing(15)
         
+<<<<<<< HEAD
         concurrent_row = self._create_setting_row("Concurrent Downloads", "16")
         self.concurrent = concurrent_row["widget"]
         self.concurrent.addItems(["1", "2", "3", "4", "6", "8", "10", "12", "16", "20", "24", "32"])
@@ -939,6 +1000,15 @@ class SettingsTab(QWidget):
         appearance_layout.addWidget(theme_row["label"])
         appearance_layout.addWidget(self.theme_box)
         v.addWidget(appearance_group)
+=======
+        concurrent_row = self._create_setting_row("Concurrent Downloads", "6")
+        self.concurrent = concurrent_row["widget"]
+        self.concurrent.addItems(["1", "2", "3", "4", "5", "6", "8", "10", "12", "16"])
+        self.concurrent.setCurrentText(str(self._config.get("concurrent_downloads", 6)))
+        perf_layout.addWidget(concurrent_row["label"])
+        perf_layout.addWidget(self.concurrent)
+        v.addWidget(perf_group)
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
         # Apply Button
         apply_btn = QPushButton("Apply Settings")
@@ -1014,13 +1084,19 @@ class SettingsTab(QWidget):
         self.config_changed.emit(data)
 
     def current_settings(self) -> Dict:
+<<<<<<< HEAD
         theme_map = {"Dark": "dark", "Light": "light", "AMOLED": "amoled"}
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         return {
             "download_dir": self.download_dir_label.text(),
             "default_format": self.default_format.currentText(),
             "audio_bitrate_kbps": int(self.bitrate.currentText().split()[0]),  # Extract number from "320 kbps"
             "concurrent_downloads": int(self.concurrent.currentText()),
+<<<<<<< HEAD
             "theme": theme_map.get(self.theme_box.currentText(), "dark"),
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         }
 
 

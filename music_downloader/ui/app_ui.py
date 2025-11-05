@@ -10,7 +10,11 @@ from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
+<<<<<<< HEAD
     QStackedWidget,
+=======
+    QTabWidget,
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
     QFileDialog,
     QLabel,
     QPushButton,
@@ -23,6 +27,7 @@ from PyQt6.QtWidgets import (
     QStyle,
 )
 
+<<<<<<< HEAD
 from music_downloader.ui.components import SearchTab, SettingsTab
 from music_downloader.ui.components_enhanced import EnhancedDownloadsTab
 from music_downloader.ui.toast import ToastManager
@@ -30,6 +35,11 @@ from music_downloader.ui.themes import ThemeType, apply_theme
 from music_downloader.ui.sidebar import Sidebar
 from music_downloader.ui.shortcuts import ShortcutManager, PageTransitions
 from music_downloader.core.downloader import DownloadManager
+=======
+from .components import SearchTab, DownloadsTab, SettingsTab
+from .toast import ToastManager
+from core.downloader import DownloadManager
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
 
 class AppWindow(QMainWindow):
@@ -44,6 +54,7 @@ class AppWindow(QMainWindow):
         # Download manager
         self.manager = DownloadManager(
             download_dir=Path(self._config["download_dir"]),
+<<<<<<< HEAD
             concurrent=self._config.get("concurrent_downloads", 16),
         )
 
@@ -70,11 +81,30 @@ class AppWindow(QMainWindow):
         self.pages.addWidget(self.search_tab)
         self.pages.addWidget(self.downloads_tab)
         self.pages.addWidget(self.settings_tab)
+=======
+            concurrent=self._config.get("concurrent_downloads", 3),
+        )
+
+        # Tabs
+        self.tabs = QTabWidget()
+        self.setCentralWidget(self.tabs)
+
+        self.search_tab = SearchTab()
+        self.downloads_tab = DownloadsTab(self.manager)
+        self.settings_tab = SettingsTab(self._config)
+
+        self.tabs.addTab(self.search_tab, "Home")
+        self.tabs.addTab(self.downloads_tab, "Downloads")
+        self.tabs.addTab(self.settings_tab, "Settings")
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
         # Wiring
         self.search_tab.request_download.connect(self._on_request_download)
         self.settings_tab.config_changed.connect(self._on_config_changed)
+<<<<<<< HEAD
         self.sidebar.navigate_to.connect(self._on_navigate)
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
         # System tray
         self._init_tray()
@@ -82,6 +112,7 @@ class AppWindow(QMainWindow):
         # Toasts
         self.toasts = ToastManager(self)
 
+<<<<<<< HEAD
         # Keyboard shortcuts
         self.shortcut_manager = ShortcutManager(self)
         self.shortcut_manager.setup_shortcuts(
@@ -95,14 +126,19 @@ class AppWindow(QMainWindow):
         # Page transitions
         self.page_transitions = PageTransitions(self.pages)
 
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         # Apply starting settings
         self._apply_settings()
 
     # ---------- Events ----------
+<<<<<<< HEAD
     def _on_navigate(self, page_index: int):
         """Handle sidebar navigation with smooth transition"""
         self.page_transitions.fade_to_page(page_index)
     
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
     def _on_request_download(self, item: dict, fmt: str, bitrate_kbps: int, video_quality: str, audio_quality: str):
         # enqueue and hook notifications
         print(f"_on_request_download called for: {item.get('title')}")
@@ -110,6 +146,7 @@ class AppWindow(QMainWindow):
         print(f"Job created with ID: {job.id}")
         job.sig_done.connect(lambda path, title=job.title: self._notify_complete(title, path))
         job.sig_error.connect(lambda msg, title=job.title: self._notify_error(title, msg))
+<<<<<<< HEAD
         print(f"Switching to Downloads page")
         self.pages.setCurrentIndex(1)  # Switch to downloads page
         self.sidebar.set_current_page(1)
@@ -126,6 +163,14 @@ class AppWindow(QMainWindow):
             theme_type = theme_map.get(new_theme, ThemeType.DARK)
             apply_theme(QApplication.instance(), theme_type)
             self.toasts.show_toast(f"Theme changed to {new_theme.capitalize()}")
+=======
+        print(f"Switching to Downloads tab")
+        self.tabs.setCurrentIndex(1)  # Switch to downloads tab
+
+    def _on_config_changed(self, new_conf: Dict):
+        self._config.update(new_conf)
+        self._apply_settings()
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
     def _apply_settings(self):
         # Update download dir and concurrency in manager

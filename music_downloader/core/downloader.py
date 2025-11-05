@@ -60,8 +60,11 @@ class DownloadJob(QObject):
         self._cancel = threading.Event()
         self._running = False
         self._last_progress_time = 0
+<<<<<<< HEAD
         self.retry_count = 0
         self.max_retries = 3
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
     def request_pause(self):
         self._pause.set()
@@ -83,7 +86,11 @@ class DownloadJob(QObject):
 
 # --------- Manager ---------
 class DownloadManager:
+<<<<<<< HEAD
     def __init__(self, download_dir: Path, concurrent: int = 16):
+=======
+    def __init__(self, download_dir: Path, concurrent: int = 3):
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         self._download_dir = Path(download_dir)
         self._concurrent = max(1, int(concurrent))
         self._jobs: Dict[str, DownloadJob] = {}
@@ -94,12 +101,15 @@ class DownloadManager:
         self._info_cache: Dict[str, dict] = {}
         # Queue for pending jobs
         self._pending_jobs = []
+<<<<<<< HEAD
         # Event to signal queue processor
         self._queue_event = threading.Event()
         # Increase thread pool size for better concurrency
         QThreadPool.globalInstance().setMaxThreadCount(min(concurrent * 2, 64))
         # Start queue processor
         self._start_queue_processor()
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
     
     def _check_aria2c(self) -> bool:
         """Check if aria2c is available for faster downloads."""
@@ -142,6 +152,7 @@ class DownloadManager:
         return job
 
     def submit(self, job: DownloadJob):
+<<<<<<< HEAD
         # Add to pending queue
         with self._lock:
             self._pending_jobs.append(job)
@@ -175,6 +186,15 @@ class DownloadManager:
     
     def _start_job(self, job: DownloadJob):
         """Start a job immediately"""
+=======
+        # Start asynchronously using QTimer to avoid blocking UI
+        print(f"Submitting job: {job.title}")
+        QTimer.singleShot(0, lambda: self._start_or_queue(job))
+        print(f"Job queued for start")
+
+    def _start_or_queue(self, job: DownloadJob):
+        # Use QThreadPool for better Qt integration
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
         class DownloadRunnable(QRunnable):
             def __init__(self, manager, job):
                 super().__init__()
@@ -183,6 +203,7 @@ class DownloadManager:
                 self.setAutoDelete(True)
             
             def run(self):
+<<<<<<< HEAD
                 self.manager._run_job(self.job)
         
         with self._lock:
@@ -191,6 +212,23 @@ class DownloadManager:
         
         print(f"▶️  Starting: {job.title} (Active: {len(self._active_threads)}/{self._concurrent})")
         QThreadPool.globalInstance().start(runnable)
+=======
+                print(f"QRunnable started for: {self.job.title}")
+                self.manager._run_job(self.job)
+        
+        with self._lock:
+            if len(self._active_threads) >= self._concurrent:
+                # poll again later using QTimer
+                print(f"Queue full, retrying in 500ms")
+                QTimer.singleShot(500, lambda: self._start_or_queue(job))
+                return
+            
+            print(f"Starting download for: {job.title}")
+            runnable = DownloadRunnable(self, job)
+            self._active_threads[job.id] = runnable
+            QThreadPool.globalInstance().start(runnable)
+            print(f"Download started in thread pool")
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
     def pause(self, job_id: str):
         job = self._jobs.get(job_id)
@@ -219,6 +257,7 @@ class DownloadManager:
         job._running = True
         job.sig_status.emit("Starting…")
         job.sig_progress.emit(0, "--", "--:--", "--")  # Initialize progress bar immediately
+<<<<<<< HEAD
         
         try:
             # Retry loop with exponential backoff
@@ -272,15 +311,23 @@ class DownloadManager:
     
     def _execute_download(self, job: DownloadJob):
         """Execute the actual download"""
+=======
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
         outtmpl = str(Path(job.outdir) / "%(title)s [%(id)s].%(ext)s")
         common_opts = {
             "outtmpl": outtmpl,
             "continuedl": True,
             "noplaylist": True,
+<<<<<<< HEAD
             "retries": 2,  # Reduced for faster failure detection
             "fragment_retries": 2,
             "concurrent_fragments": 32,  # Increased for faster parallel downloads
+=======
+            "retries": 3,  # Reduced for faster failure detection
+            "fragment_retries": 3,
+            "concurrent_fragments": 16,  # Max fragments for faster downloads
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
             "progress_hooks": [lambda d: self._on_hook(job, d)],
             "windowsfilenames": True,
             "quiet": True,
@@ -289,10 +336,17 @@ class DownloadManager:
             "noprogress": True,
             # Speed optimizations
             "http_chunk_size": 10485760,  # 10MB chunks for faster downloads
+<<<<<<< HEAD
             "socket_timeout": 15,  # Reduced timeout for faster connection
             "source_address": None,  # Use default routing for fastest connection
             # Parallelization optimizations
             "concurrent_fragment_downloads": 32,  # Download fragments in parallel
+=======
+            "socket_timeout": 20,  # Reduced timeout for faster initial connection
+            "source_address": None,  # Use default routing for fastest connection
+            # Parallelization optimizations
+            "concurrent_fragment_downloads": 16,  # Download fragments in parallel
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
             "throttledratelimit": None,  # Remove any rate limiting
             "buffersize": 16384,  # Larger buffer for faster I/O
             # Skip unnecessary operations
@@ -322,6 +376,7 @@ class DownloadManager:
                         "-x", "16", "-s", "16", "-k", "1M",
                         "--max-connection-per-server=16",
                         "--min-split-size=1M",
+<<<<<<< HEAD
                         "--split=16",
                         "--disk-cache=128M",
                         "--file-allocation=none",
@@ -329,6 +384,9 @@ class DownloadManager:
                         "--retry-wait=1",
                         "--connect-timeout=10",
                         "--timeout=10",
+=======
+                        "--disk-cache=64M",
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
                     ]
                 }
             
@@ -343,9 +401,14 @@ class DownloadManager:
                     }
                 ],
                 "postprocessor_args": [
+<<<<<<< HEAD
                     "-threads", "0",  # Use all CPU cores
                     "-preset", "ultrafast",  # Fastest conversion
                     "-movflags", "+faststart",  # Optimize for streaming
+=======
+                    "-threads", "0",
+                    "-preset", "ultrafast",
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
                 ],
             }
         else:  # mp4
@@ -397,6 +460,7 @@ class DownloadManager:
                 ],
             }
 
+<<<<<<< HEAD
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(job.url, download=True)
             # Final file path (postprocessors may change extension)
@@ -404,6 +468,25 @@ class DownloadManager:
                 ".mp3" if job.format == "mp3" else ".mp4"
             )
         job.sig_done.emit(str(final_path))
+=======
+        try:
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(job.url, download=True)
+                # Final file path (postprocessors may change extension)
+                final_path = Path(ydl.prepare_filename(info)).with_suffix(
+                    ".mp3" if job.format == "mp3" else ".mp4"
+                )
+            job.sig_done.emit(str(final_path))
+        except Exception as e:
+            if job.is_canceled:
+                job.sig_error.emit("Canceled by user")
+            else:
+                job.sig_error.emit(str(e))
+        finally:
+            job._running = False
+            with self._lock:
+                self._active_threads.pop(job.id, None)
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
 
     # progress hook
     def _on_hook(self, job: DownloadJob, d: dict):

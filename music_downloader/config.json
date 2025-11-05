@@ -2,6 +2,12 @@
   "download_dir": "C:\\Users\\gamer\\Downloads\\MusicDownloader",
   "default_format": "mp3",
   "audio_bitrate_kbps": 320,
+<<<<<<< HEAD
   "concurrent_downloads": 16,
   "theme": "dark"
 }
+=======
+  "concurrent_downloads": 3,
+  "theme": "dark"
+}
+>>>>>>> 1e6534e54c63bd195ec8d91fe3a7dd0fdb65b3f3
