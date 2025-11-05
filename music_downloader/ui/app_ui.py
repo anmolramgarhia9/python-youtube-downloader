@@ -1,0 +1,179 @@
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Dict
+
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QIcon, QPixmap
+from PyQt6.QtWidgets import (
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QStackedWidget,
+    QFileDialog,
+    QLabel,
+    QPushButton,
+    QComboBox,
+    QSpinBox,
+    QMessageBox,
+    QApplication,
+    QSystemTrayIcon,
+    QMenu,
+    QStyle,
+)
+
+from music_downloader.ui.components import SearchTab, SettingsTab
+from music_downloader.ui.components_enhanced import EnhancedDownloadsTab
+from music_downloader.ui.toast import ToastManager
+from music_downloader.ui.themes import ThemeType, apply_theme
+from music_downloader.ui.sidebar import Sidebar
+from music_downloader.ui.shortcuts import ShortcutManager, PageTransitions
+from music_downloader.core.downloader import DownloadManager
+
+
+class AppWindow(QMainWindow):
+    def __init__(self, config: Dict, config_path: Path):
+        super().__init__()
+        self.setWindowTitle("Music Downloader")
+        self.resize(1180, 740)
+
+        self._config = dict(config)
+        self._config_path = config_path
+
+        # Download manager
+        self.manager = DownloadManager(
+            download_dir=Path(self._config["download_dir"]),
+            concurrent=self._config.get("concurrent_downloads", 16),
+        )
+
+        # Main layout with sidebar
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        main_layout = QHBoxLayout(central_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Sidebar navigation
+        self.sidebar = Sidebar()
+        main_layout.addWidget(self.sidebar)
+
+        # Stacked widget for pages
+        self.pages = QStackedWidget()
+        main_layout.addWidget(self.pages)
+
+        # Create pages
+        self.search_tab = SearchTab()
+        self.downloads_tab = EnhancedDownloadsTab(self.manager)
+        self.settings_tab = SettingsTab(self._config)
+
+        self.pages.addWidget(self.search_tab)
+        self.pages.addWidget(self.downloads_tab)
+        self.pages.addWidget(self.settings_tab)
+
+        # Wiring
+        self.search_tab.request_download.connect(self._on_request_download)
+        self.settings_tab.config_changed.connect(self._on_config_changed)
+        self.sidebar.navigate_to.connect(self._on_navigate)
+
+        # System tray
+        self._init_tray()
+
+        # Toasts
+        self.toasts = ToastManager(self)
+
+        # Keyboard shortcuts
+        self.shortcut_manager = ShortcutManager(self)
+        self.shortcut_manager.setup_shortcuts(
+            self.search_tab, 
+            self.downloads_tab,
+            self.settings_tab,
+            self.sidebar,
+            self.pages
+        )
+
+        # Page transitions
+        self.page_transitions = PageTransitions(self.pages)
+
+        # Apply starting settings
+        self._apply_settings()
+
+    # ---------- Events ----------
+    def _on_navigate(self, page_index: int):
+        """Handle sidebar navigation with smooth transition"""
+        self.page_transitions.fade_to_page(page_index)
+    
+    def _on_request_download(self, item: dict, fmt: str, bitrate_kbps: int, video_quality: str, audio_quality: str):
+        # enqueue and hook notifications
+        print(f"_on_request_download called for: {item.get('title')}")
+        job = self.downloads_tab.enqueue_download(item, fmt, bitrate_kbps, video_quality, audio_quality)
+        print(f"Job created with ID: {job.id}")
+        job.sig_done.connect(lambda path, title=job.title: self._notify_complete(title, path))
+        job.sig_error.connect(lambda msg, title=job.title: self._notify_error(title, msg))
+        print(f"Switching to Downloads page")
+        self.pages.setCurrentIndex(1)  # Switch to downloads page
+        self.sidebar.set_current_page(1)
+
+    def _on_config_changed(self, new_conf: Dict):
+        old_theme = self._config.get("theme", "dark")
+        self._config.update(new_conf)
+        self._apply_settings()
+        
+        # Apply theme change if theme was changed
+        new_theme = new_conf.get("theme", "dark")
+        if old_theme != new_theme:
+            theme_map = {"dark": ThemeType.DARK, "light": ThemeType.LIGHT, "amoled": ThemeType.AMOLED}
+            theme_type = theme_map.get(new_theme, ThemeType.DARK)
+            apply_theme(QApplication.instance(), theme_type)
+            self.toasts.show_toast(f"Theme changed to {new_theme.capitalize()}")
+
+    def _apply_settings(self):
+        # Update download dir and concurrency in manager
+        self.manager.set_download_dir(Path(self._config["download_dir"]))
+        self.manager.set_concurrency(int(self._config.get("concurrent_downloads", 3)))
+
+    def get_config(self) -> Dict:
+        # Gather settings from settings tab
+        settings = self.settings_tab.current_settings()
+        merged = dict(self._config)
+        merged.update(settings)
+        return merged
+
+    # ---------- Tray & notifications ----------
+    def _init_tray(self):
+        self.tray = QSystemTrayIcon(self)
+        icon = self.windowIcon()
+        if icon.isNull():
+            icon = self.style().standardIcon(QStyle.StandardPixmap.SP_MediaPlay)
+        self.tray.setIcon(icon)
+        menu = QMenu()
+        act_show = menu.addAction("Show")
+        act_quit = menu.addAction("Exit")
+        act_show.triggered.connect(self._show_from_tray)
+        act_quit.triggered.connect(lambda: QApplication.instance().quit())
+        self.tray.setContextMenu(menu)
+        self.tray.show()
+
+    def _show_from_tray(self):
+        self.showNormal()
+        self.activateWindow()
+        self.raise_()
+
+    def _notify_complete(self, title: str, path: str):
+        self.toasts.show_toast(f"Downloaded: {title}")
+        if self.tray.isVisible():
+            self.tray.showMessage("Download complete", title, QSystemTrayIcon.MessageIcon.Information, 3000)
+
+    def _notify_error(self, title: str, msg: str):
+        self.toasts.show_toast(f"Failed: {title}")
+        if self.tray.isVisible():
+            self.tray.showMessage("Download failed", f"{title}: {msg}", QSystemTrayIcon.MessageIcon.Critical, 3000)
+
+    def closeEvent(self, event):
+        # Minimize to tray
+        if self.tray and self.tray.isVisible():
+            event.ignore()
+            self.hide()
+            self.tray.showMessage("Music Downloader", "Still running in the tray.", QSystemTrayIcon.MessageIcon.Information, 2000)
+        else:
+            super().closeEvent(event)
